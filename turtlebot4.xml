@@ -1,4 +1,4 @@
-<mujoco model="tb4">
+<mujoco model="turtlebot4">
 	<compiler angle="radian" coordinate="local" meshdir="./assets/meshes" autolimits="true"/>
 		<!-- initial model from https://gitlab.dit.htwk-leipzig.de/eric.elbing/ai-enhanced-ros/-/tree/main/turtlebot4/turtlebot4ai_package-->
     <size nstack="300000" nuser_geom="1"/>
@@ -8,7 +8,7 @@
         <material name="metal" rgba=".9 .95 .95 1"/>
         <material name="black" rgba="0 0 0 1"/>
         <material name="white" rgba="1 1 1 1"/>
-        <material name="gray" rgba="0.671705 0.692426 0.774270 1"/>
+        <material name="gray" rgba="0.371705 0.392426 0.474270 1"/>
         <mesh file="body_visual_processed.stl" scale="0.1 0.1 0.1"/>
         <mesh file="bumper_visual.obj" scale="0.001 0.001 0.001"/>
         <mesh file="top_reduced.stl" scale="0.001 0.001 0.001"/>
@@ -43,27 +43,51 @@
         <!-- WHEELS -->
         <body name="wheel_l" pos="0.11755 0.002 -0.0032">
             <geom type="mesh" mesh="wheel"/>
-            <joint name="left" damping=".03" actuatorfrcrange="-.1 .1" pos="0 0 0" axis="1 0 0"/>
+            <joint name="left" damping=".03" actuatorfrcrange="-.2 .2" pos="0 0 0" axis="1 0 0"/>
         </body>
         <body name="wheel_r" pos="-0.117 0.002 -0.0032">
             <geom type="mesh" mesh="wheel"/>
-            <joint name="right" damping=".03" actuatorfrcrange="-.1 .1" pos="0 0 0" axis="1 0 0"/>
+            <joint name="right" damping=".03" actuatorfrcrange="-.2 .2" pos="0 0 0" axis="1 0 0"/>
         </body>
         <body name="wheel_f" pos="0 -0.125 -0.026">
             <geom type="sphere" size="0.013 0.013"/>
             <joint type="ball"/>
+        </body>
+        <!-- Lidar 2D -->
+        <!-- LIDAR body mounted on the base -->
+        <body name="lidar" pos="0.0 0.04 0.165"> <!-- center pos="0.0 0.04 0.145" -->
+            <!-- All beam sites live in THIS body (no 'parent' attribute needed) -->
+            <!-- Convention: beam fires along site -Z. Pitch -90° (−pi/2) to lie in XY plane, then yaw by 20° steps. -->
+            <site name="rf-00" pos="0.050000 0.000000 0" axisangle="0.000000 -1.000000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-01" pos="0.046985 0.017101 0" axisangle="0.342020 -0.939693 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-02" pos="0.038302 0.032139 0" axisangle="0.642788 -0.766044 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-03" pos="0.025000 0.043301 0" axisangle="0.866025 -0.500000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-04" pos="0.008682 0.049240 0" axisangle="0.984808 -0.173648 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-05" pos="-0.008682 0.049240 0" axisangle="0.984808 0.173648 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-06" pos="-0.025000 0.043301 0" axisangle="0.866025 0.500000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-07" pos="-0.038302 0.032139 0" axisangle="0.642788 0.766044 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-08" pos="-0.046985 0.017101 0" axisangle="0.342020 0.939693 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-09" pos="-0.050000 0.000000 0" axisangle="0.000000 1.000000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-10" pos="-0.046985 -0.017101 0" axisangle="-0.342020 0.939693 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-11" pos="-0.038302 -0.032139 0" axisangle="-0.642788 0.766044 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-12" pos="-0.025000 -0.043301 0" axisangle="-0.866025 0.500000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-13" pos="-0.008682 -0.049240 0" axisangle="-0.984808 0.173648 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-14" pos="0.008682 -0.049240 0" axisangle="-0.984808 -0.173648 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-15" pos="0.025000 -0.043301 0" axisangle="-0.866025 -0.500000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-16" pos="0.038302 -0.032139 0" axisangle="-0.642788 -0.766044 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
+            <site name="rf-17" pos="0.046985 -0.017101 0" axisangle="-0.342020 -0.939693 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
         </body>
     </body>
   </worldbody>
 
   <tendon>
     <fixed name="forward">
-      <joint joint="left" coef=".1"/>
-      <joint joint="right" coef=".1"/>
+      <joint joint="left" coef=".2"/>
+      <joint joint="right" coef=".2"/>
     </fixed>
     <fixed name="turn">
-      <joint joint="left" coef="-.1"/>
-      <joint joint="right" coef=".1"/>
+      <joint joint="left" coef="-.2"/>
+      <joint joint="right" coef=".2"/>
     </fixed>
   </tendon>
 
@@ -73,11 +97,36 @@
   </actuator>
 
   <sensor>
-    <!-- <jointactuatorfrc name="right" joint="right"/> -->
-    <!-- <jointactuatorfrc name="left" joint="left"/> -->
+    <!-- IMU -->
     <framequat name="imu_quat" objtype="site" objname="imu"/>
     <gyro name="imu_ang" site="imu"/>
     <accelerometer name="imu_acc" site="imu"/>
+
+    <!-- Wheel joint states -->
+    <jointpos name="left_pos"  joint="left"/>
+    <jointvel name="left_vel"  joint="left"/>
+    <jointpos name="right_pos" joint="right"/>
+    <jointvel name="right_vel" joint="right"/>
+
+    <!-- Lidar 2D rangefinders -->
+    <rangefinder name="scan00" site="rf-00" cutoff="10"/>
+    <rangefinder name="scan01" site="rf-01" cutoff="10"/>
+    <rangefinder name="scan02" site="rf-02" cutoff="10"/>
+    <rangefinder name="scan03" site="rf-03" cutoff="10"/>
+    <rangefinder name="scan04" site="rf-04" cutoff="10"/>
+    <rangefinder name="scan05" site="rf-05" cutoff="10"/>
+    <rangefinder name="scan06" site="rf-06" cutoff="10"/>
+    <rangefinder name="scan07" site="rf-07" cutoff="10"/>
+    <rangefinder name="scan08" site="rf-08" cutoff="10"/>
+    <rangefinder name="scan09" site="rf-09" cutoff="10"/>
+    <rangefinder name="scan10" site="rf-10" cutoff="10"/>
+    <rangefinder name="scan11" site="rf-11" cutoff="10"/>
+    <rangefinder name="scan12" site="rf-12" cutoff="10"/>
+    <rangefinder name="scan13" site="rf-13" cutoff="10"/>
+    <rangefinder name="scan14" site="rf-14" cutoff="10"/>
+    <rangefinder name="scan15" site="rf-15" cutoff="10"/>
+    <rangefinder name="scan16" site="rf-16" cutoff="10"/>
+    <rangefinder name="scan17" site="rf-17" cutoff="10"/>
   </sensor>
 </mujoco>
 
