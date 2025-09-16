@@ -1,6 +1,6 @@
 <mujoco model="tb4">
 	<compiler angle="radian" coordinate="local" meshdir="./assets/meshes" autolimits="true"/>
-
+		<!-- initial model from https://gitlab.dit.htwk-leipzig.de/eric.elbing/ai-enhanced-ros/-/tree/main/turtlebot4/turtlebot4ai_package-->
     <size nstack="300000" nuser_geom="1"/>
     <option gravity="0 0 -9.81" timestep="0.01"/>
 
