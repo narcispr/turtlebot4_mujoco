@@ -1,0 +1,83 @@
+<mujoco model="tb4">
+	<compiler angle="radian" coordinate="local" meshdir="./assets/meshes" autolimits="true"/>
+
+    <size nstack="300000" nuser_geom="1"/>
+    <option gravity="0 0 -9.81" timestep="0.01"/>
+
+    <asset>
+        <material name="metal" rgba=".9 .95 .95 1"/>
+        <material name="black" rgba="0 0 0 1"/>
+        <material name="white" rgba="1 1 1 1"/>
+        <material name="gray" rgba="0.671705 0.692426 0.774270 1"/>
+        <mesh file="body_visual_processed.stl" scale="0.1 0.1 0.1"/>
+        <mesh file="bumper_visual.obj" scale="0.001 0.001 0.001"/>
+        <mesh file="top_reduced.stl" scale="0.001 0.001 0.001"/>
+        <mesh file="weight_block.stl" scale="0.001 0.001 0.001"/>
+        <mesh file="wheel.stl" scale="0.001 0.001 0.001"/>
+    </asset>
+
+  <worldbody>
+    <body name="base" pos="0 0 0.0392">
+        <freejoint name="floating_base_joint"/>
+        <geom type="mesh" mesh="body_visual_processed" material="gray" mass="0.269"/>
+        <site name="imu" pos="0.051 -0.035 0.0293"/>
+        <body name="top" pos="-0.128 0.138 0.055" axisangle="0 0 1 4.71239">
+            <geom type="mesh" mesh="top_reduced" material="gray" mass="0.0"/>
+        </body>
+        <body name="bumper" pos="0 0 0" axisangle="0 0 1 4.71239">
+            <geom type="mesh" mesh="bumper_visual" material="black" mass="0.1"/>
+        </body>
+        <!-- WEIGHT BLOCKS -->
+        <body name="front_left_bottom_weight_block" pos="0.0876 -0.06 0.0587">
+            <geom type="mesh" mesh="weight_block" material="black" mass="0.061"/>
+        </body>
+        <body name="front_left_top_weight_block" pos="0.0876 -0.06 0.0677">
+            <geom type="mesh" mesh="weight_block" material="black" mass="0.061"/>
+        </body>
+        <body name="front_right_bottom_weight_block" pos="-0.0876 -0.06 0.0587">
+            <geom type="mesh" mesh="weight_block" material="black" mass="0.061"/>
+        </body>
+        <body name="front_right_top_weight_block" pos="-0.0876 -0.06 0.0677">
+            <geom type="mesh" mesh="weight_block" material="black" mass="0.061"/>
+        </body>
+        <!-- WHEELS -->
+        <body name="wheel_l" pos="0.11755 0.002 -0.0032">
+            <geom type="mesh" mesh="wheel"/>
+            <joint name="left" damping=".03" actuatorfrcrange="-.1 .1" pos="0 0 0" axis="1 0 0"/>
+        </body>
+        <body name="wheel_r" pos="-0.117 0.002 -0.0032">
+            <geom type="mesh" mesh="wheel"/>
+            <joint name="right" damping=".03" actuatorfrcrange="-.1 .1" pos="0 0 0" axis="1 0 0"/>
+        </body>
+        <body name="wheel_f" pos="0 -0.125 -0.026">
+            <geom type="sphere" size="0.013 0.013"/>
+            <joint type="ball"/>
+        </body>
+    </body>
+  </worldbody>
+
+  <tendon>
+    <fixed name="forward">
+      <joint joint="left" coef=".1"/>
+      <joint joint="right" coef=".1"/>
+    </fixed>
+    <fixed name="turn">
+      <joint joint="left" coef="-.1"/>
+      <joint joint="right" coef=".1"/>
+    </fixed>
+  </tendon>
+
+  <actuator>
+    <motor name="forward" tendon="forward" ctrlrange="-1 1"/>
+    <motor name="turn" tendon="turn" ctrlrange="-1 1"/>
+  </actuator>
+
+  <sensor>
+    <!-- <jointactuatorfrc name="right" joint="right"/> -->
+    <!-- <jointactuatorfrc name="left" joint="left"/> -->
+    <framequat name="imu_quat" objtype="site" objname="imu"/>
+    <gyro name="imu_ang" site="imu"/>
+    <accelerometer name="imu_acc" site="imu"/>
+  </sensor>
+</mujoco>
+
