@@ -4,7 +4,7 @@
 
 import time
 from dataclasses import dataclass
-from typing import Callable, Dict, Any, Optional
+from typing import Callable, Dict, Any, Optional, Tuple
 
 import numpy as np
 import mujoco
@@ -35,11 +35,14 @@ class Turtlebot4Sim:
                  from_string: bool = False,
                  open_viewer: bool = False,
                  sim_hz: int = 500,
-                 sensor_hz: int = 50):
-        assert sim_hz % sensor_hz == 0, "sim_hz must be a multiple of sensor_hz (e.g., 500 and 50)."
+                 control_hz: int = 50):
+        assert sim_hz % control_hz == 0, "sim_hz must be a multiple of sensor_hz (e.g., 500 and 50)."
         self.sim_hz = sim_hz
-        self.sensor_hz = sensor_hz
-        self.steps_per_sensor = sim_hz // sensor_hz
+        self.control_hz = control_hz
+        self.steps_per_sensor = sim_hz // control_hz
+        self.last_scan = []
+        self.sensors: Dict[str, Any] = {}
+        self.t = 0.0  # sim time
 
         # Load model
         if from_string:
@@ -47,6 +50,10 @@ class Turtlebot4Sim:
         else:
             self.model = mujoco.MjModel.from_xml_path(xml_path_or_str)
 
+        # Sensors/Actuators to be presnet:
+        self.tb4_sensors = ['imu_quat', 'imu_ang', 'imu_acc', 'left_pos', 'left_vel', 'right_pos', 'right_vel', 'lidar_yaw_pos', 'lidar_yaw_vel', 'scan']
+        self.tb4_actuators = ['forward', 'turn', 'lidar_spin']
+        
         # Override timestep to hit desired sim rate (500 Hz => 0.002 s)
         self.model.opt.timestep = 1.0 / float(self.sim_hz)
 
@@ -59,11 +66,26 @@ class Turtlebot4Sim:
             adr = int(self.model.sensor_adr[i])
             dim = int(self.model.sensor_dim[i])
             self._sensors[name] = SensorInfo(name=name, adr=adr, dim=dim)
+        
+        # Check that expected sensors are present
+        for s in self.tb4_sensors:
+            if s not in self._sensors:
+                print(f"[warn] Expected sensor '{s}' not found in model.")
+                exit(1)
 
         # Build actuator name -> index map (handy if you want to send controls by name)
         self._act_id: Dict[str, int] = {}
         for i in range(self.model.nu):
             self._act_id[self.model.actuator(i).name] = i
+        
+        # Check that expected actuators are present
+        for a in self.tb4_actuators:
+            if a not in self._act_id:
+                print(f"[warn] Expected actuator '{a}' not found in model.")
+                exit(1)
+        
+        # Initialise lidar rotation
+        self.data.ctrl[self._act_id["lidar_spin"]] = float(0.05)  # ~2.5 Hz spin
 
         # Optional viewer
         self._viewer = None
@@ -88,80 +110,61 @@ class Turtlebot4Sim:
             self.data.ctrl[:] = 0.0
 
     # ---------- Sensors ----------
-    def read_all_sensors(self) -> Dict[str, Any]:
+    def read_sensors(self) -> Dict[str, Any]:
         """
         Return a dict: sensor_name -> scalar (float) or np.ndarray for vector sensors.
         """
         out: Dict[str, Any] = {}
-        for s in self._sensors.values():
-            vals = self.data.sensordata[s.adr: s.adr + s.dim]
-            out[s.name] = float(vals[0]) if s.dim == 1 else np.array(vals, copy=True)
+        for s in self.tb4_sensors[0:7]:  # first 7 are vectors
+            info = self._sensors[s]
+            vals = self.data.sensordata[info.adr: info.adr + info.dim]
+            out[s] = np.array(vals, copy=True)
+
         return out
 
-    # ---------- Main loop ----------
-    def run(self,
-            seconds: float = 10.0,
-            realtime: bool = True,
-            on_sample: Optional[Callable[[float, Dict[str, Any]], None]] = None) -> None:
+    def read_scan(self) -> Tuple[float, float]:
         """
-        Run the simulation.
-          - seconds: how long to run
-          - realtime: if True, tries to match wall-clock time
-          - on_sample: callback called at 50 Hz: fn(sim_time, sensor_dict)
+        Read lidar orientation and rangefinder value.
         """
-        steps_total = int(round(seconds * self.sim_hz))
-        next_wall_time = time.perf_counter()
-        step_dt = 1.0 / self.sim_hz
+        yaw_pos_info = self._sensors['lidar_yaw_pos']
+        scan_info = self._sensors['scan']
 
-        # Launch viewer if requested
-        if self._use_viewer:
-            # passive viewer: we control stepping
-            with viewer.launch_passive(self.model, self.data) as v:
-                self._viewer = v
-                self._loop(steps_total, step_dt, realtime, on_sample)
-                self._viewer = None
-        else:
-            self._loop(steps_total, step_dt, realtime, on_sample)
+        yaw_pos = float(self.data.sensordata[yaw_pos_info.adr]) % (2 * np.pi)
+        scan = float(self.data.sensordata[scan_info.adr])
 
-    def _loop(self, steps_total: int, step_dt: float, realtime: bool,
-              on_sample: Optional[Callable[[float, Dict[str, Any]], None]]) -> None:
+        return (yaw_pos, scan)
+
+    # ---------- Main loop ----------    
+    def iterate(self, realtime: bool) -> None:
 
         # For pacing
-        start = time.perf_counter()
-        next_step_wall = start
+        next_step_wall = time.perf_counter()
+        sim_steps = int(self.sim_hz / self.control_hz)
+        step_dt = 1.0 / self.control_hz
+        self.last_scan = []
 
-        for step in range(steps_total):
+        for _ in range(sim_steps): # steps per control
             # Step physics once (1 / sim_hz seconds of sim time)
             mujoco.mj_step(self.model, self.data)
+            # Read lidar scan
+            self.last_scan.append(self.read_scan())
+    
+        # Sample sensors at control_hz rate
+        self.t = self.data.time
+        self.sensors = self.read_sensors()
+        
+        # Keep viewer responsive if present
+        if self._viewer is not None:
+            # Clear any previous custom geoms and sync
+            self._viewer.sync()
 
-            # Keep viewer responsive if present
-            if self._viewer is not None:
-                # Clear any previous custom geoms and sync
-                self._viewer.sync()
-
-            # Sample sensors every N steps (to get 50 Hz)
-            if (step + 1) % self.steps_per_sensor == 0:
-                t = self.data.time
-                sensors = self.read_all_sensors()
-                if on_sample:
-                    on_sample(t, sensors)
-                else:
-                    # Default: brief print (keep it lightweight)
-                    # Show a couple of common sensors if they exist, otherwise count
-                    demo_keys = [k for k in ("imu_ang", "imu_acc", "left_vel", "right_vel") if k in sensors]
-                    if demo_keys:
-                        brief = {k: sensors[k] for k in demo_keys}
-                        print(f"[{t:7.3f}s] sample: {brief}")
-                    else:
-                        print(f"[{t:7.3f}s] sampled {len(sensors)} sensors.")
-
-            # Optional real-time pacing (keeps ~sim_hz timing)
-            if realtime:
-                next_step_wall += step_dt
-                now = time.perf_counter()
-                sleep_s = next_step_wall - now
-                if sleep_s > 0:
-                    time.sleep(sleep_s)
+        # Optional real-time pacing (keeps ~sim_hz timing)
+        if realtime:
+            next_step_wall += step_dt
+            now = time.perf_counter()
+            sleep_s = next_step_wall - now
+            if sleep_s > 0:
+                time.sleep(sleep_s)
 
     # ---------- Utility ----------
     def sensor_names(self):
@@ -176,7 +179,7 @@ if __name__ == "__main__":
     # Change this to your file path, or set from_string=True and paste the XML string.
     XML_PATH = "scene.xml"
 
-    sim = Turtlebot4Sim(XML_PATH, from_string=False, open_viewer=True, sim_hz=500, sensor_hz=500)
+    sim = Turtlebot4Sim(XML_PATH, from_string=False, open_viewer=True, sim_hz=500, control_hz=10)
 
     # Optional: set some controls by actuator name (if present in your model)
     # sim.set_control(forward=0.0, turn=0.0)
@@ -185,13 +188,20 @@ if __name__ == "__main__":
     print("Actuators discovered:", sim.actuator_names())
 
     # Collect 5 seconds of data at 50 Hz while sim runs at 500 Hz
-    def print_sample(t, sensors):
-        # left_v = sensors.get("left_vel", None)
-        # right_v = sensors.get("right_vel", None)
-        s = sensors.get("scan", None)
-        alpha = sensors.get("lidar_yaw_pos", None)
-        print(f"{t} - {alpha % 2*np.pi}: {s}")
-
-    
-    sim.set_control(lidar_spin=0.05)  # ~2.5 Hz spin   
-    sim.run(seconds=5.0, realtime=True, on_sample=print_sample)
+     # Launch viewer if requested
+    if sim._use_viewer:
+        # passive viewer: we control stepping
+        with viewer.launch_passive(sim.model, sim.data) as v:
+            sim._viewer = v
+            for _ in range(50):  # run for 5 seconds at 10 Hz
+                sim.iterate(realtime=True)
+                #publish IMU message, and joint states message with the info in sim.sensors and the stam self.t
+                print(f"t={sim.t:.2f} imu_quat={sim.sensors['imu_quat']} left_vel={sim.sensors['left_vel']} right_vel={sim.sensors['right_vel']} last_scan={sim.last_scan[-1]}") 
+                # publish lidar scan message with the info in sim.last_scan
+                print(f"last_scan={sim.last_scan}")
+                # ros spin once and if a new control message is received in topic /cmd_vel, call sim.set_control(forward=..., turn=...)
+                sim.set_control(forward=0.3, turn=1.0)  # example constant forward command
+            sim._viewer = None
+    else:
+        for _ in range(50):  # run for 5 seconds at 10 Hz
+            sim.iterate(realtime=False)
