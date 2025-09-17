@@ -176,7 +176,7 @@ if __name__ == "__main__":
     # Change this to your file path, or set from_string=True and paste the XML string.
     XML_PATH = "scene.xml"
 
-    sim = Turtlebot4Sim(XML_PATH, from_string=False, open_viewer=True, sim_hz=500, sensor_hz=50)
+    sim = Turtlebot4Sim(XML_PATH, from_string=False, open_viewer=True, sim_hz=500, sensor_hz=500)
 
     # Optional: set some controls by actuator name (if present in your model)
     # sim.set_control(forward=0.0, turn=0.0)
@@ -186,11 +186,12 @@ if __name__ == "__main__":
 
     # Collect 5 seconds of data at 50 Hz while sim runs at 500 Hz
     def print_sample(t, sensors):
-        # Minimal, human-readable output. Customize as needed.
         # left_v = sensors.get("left_vel", None)
         # right_v = sensors.get("right_vel", None)
-        for key in ["scan00", "scan01", "scan02", "scan03", "scan04", "scan05", "scan06", "scan07", "scan08", "scan09","scan10", "scan11", "scan12", "scan13", "scan14", "scan15", "scan16", "scan17"]:
-            s = sensors.get(key, None)
-            print(f"{s}", end=", ")
-        print("")
+        s = sensors.get("scan", None)
+        alpha = sensors.get("lidar_yaw_pos", None)
+        print(f"{t} - {alpha % 2*np.pi}: {s}")
+
+    
+    sim.set_control(lidar_spin=0.05)  # ~2.5 Hz spin   
     sim.run(seconds=5.0, realtime=True, on_sample=print_sample)

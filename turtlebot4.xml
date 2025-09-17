@@ -53,30 +53,15 @@
             <geom type="sphere" size="0.013 0.013"/>
             <joint type="ball"/>
         </body>
-        <!-- Lidar 2D -->
-        <!-- LIDAR body mounted on the base -->
-        <body name="lidar" pos="0.0 0.04 0.165"> <!-- center pos="0.0 0.04 0.145" -->
-            <!-- All beam sites live in THIS body (no 'parent' attribute needed) -->
-            <!-- Convention: beam fires along site -Z. Pitch -90° (−pi/2) to lie in XY plane, then yaw by 20° steps. -->
-            <site name="rf-00" pos="0.050000 0.000000 0" axisangle="0.000000 -1.000000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-01" pos="0.046985 0.017101 0" axisangle="0.342020 -0.939693 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-02" pos="0.038302 0.032139 0" axisangle="0.642788 -0.766044 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-03" pos="0.025000 0.043301 0" axisangle="0.866025 -0.500000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-04" pos="0.008682 0.049240 0" axisangle="0.984808 -0.173648 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-05" pos="-0.008682 0.049240 0" axisangle="0.984808 0.173648 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-06" pos="-0.025000 0.043301 0" axisangle="0.866025 0.500000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-07" pos="-0.038302 0.032139 0" axisangle="0.642788 0.766044 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-08" pos="-0.046985 0.017101 0" axisangle="0.342020 0.939693 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-09" pos="-0.050000 0.000000 0" axisangle="0.000000 1.000000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-10" pos="-0.046985 -0.017101 0" axisangle="-0.342020 0.939693 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-11" pos="-0.038302 -0.032139 0" axisangle="-0.642788 0.766044 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-12" pos="-0.025000 -0.043301 0" axisangle="-0.866025 0.500000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-13" pos="-0.008682 -0.049240 0" axisangle="-0.984808 0.173648 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-14" pos="0.008682 -0.049240 0" axisangle="-0.984808 -0.173648 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-15" pos="0.025000 -0.043301 0" axisangle="-0.866025 -0.500000 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-16" pos="0.038302 -0.032139 0" axisangle="-0.642788 -0.766044 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-            <site name="rf-17" pos="0.046985 -0.017101 0" axisangle="-0.342020 -0.939693 0 1.570796" size="0.003" rgba="0 1 0 0.2"/>
-        </body>
+        
+        <!-- Spinning 2D lidar (single rangefinder on a yaw hinge) -->
+      <body name="lidar" pos="0.0 0.04 0.17">
+        <joint name="lidar_yaw" type="hinge" axis="0 0 1" damping="0.0032" armature="0.001" frictionloss="0" limited="false"/>
+        <geom name="lidar_head_geom" type="box" size="0.01 0.01 0.01" rgba="0.2 0.8 1 0.3" mass="0.01"/>
+        <site name="rf" pos="0.025 0 0" axisangle="0 1 0 1.570796" size="0.003" rgba="0 1 0 0.5"/>
+      </body>
+
+
     </body>
   </worldbody>
 
@@ -94,6 +79,9 @@
   <actuator>
     <motor name="forward" tendon="forward" ctrlrange="-1 1"/>
     <motor name="turn" tendon="turn" ctrlrange="-1 1"/>
+    <!-- Velocity servo for the lidar yaw joint -->
+    <!-- Set control to 15.707963 (rad/s) for a 2.5 Hz spin -->
+    <motor name="lidar_spin" joint="lidar_yaw" ctrllimited="true" ctrlrange="0.0 0.05"/>
   </actuator>
 
   <sensor>
@@ -109,24 +97,12 @@
     <jointvel name="right_vel" joint="right"/>
 
     <!-- Lidar 2D rangefinders -->
-    <rangefinder name="scan00" site="rf-00" cutoff="10"/>
-    <rangefinder name="scan01" site="rf-01" cutoff="10"/>
-    <rangefinder name="scan02" site="rf-02" cutoff="10"/>
-    <rangefinder name="scan03" site="rf-03" cutoff="10"/>
-    <rangefinder name="scan04" site="rf-04" cutoff="10"/>
-    <rangefinder name="scan05" site="rf-05" cutoff="10"/>
-    <rangefinder name="scan06" site="rf-06" cutoff="10"/>
-    <rangefinder name="scan07" site="rf-07" cutoff="10"/>
-    <rangefinder name="scan08" site="rf-08" cutoff="10"/>
-    <rangefinder name="scan09" site="rf-09" cutoff="10"/>
-    <rangefinder name="scan10" site="rf-10" cutoff="10"/>
-    <rangefinder name="scan11" site="rf-11" cutoff="10"/>
-    <rangefinder name="scan12" site="rf-12" cutoff="10"/>
-    <rangefinder name="scan13" site="rf-13" cutoff="10"/>
-    <rangefinder name="scan14" site="rf-14" cutoff="10"/>
-    <rangefinder name="scan15" site="rf-15" cutoff="10"/>
-    <rangefinder name="scan16" site="rf-16" cutoff="10"/>
-    <rangefinder name="scan17" site="rf-17" cutoff="10"/>
+    <!-- Lidar yaw -->
+    <jointpos name="lidar_yaw_pos" joint="lidar_yaw"/>
+    <jointvel name="lidar_yaw_vel" joint="lidar_yaw"/>
+    <!-- Single 2D lidar rangefinder (returns distance along site -Z) -->
+    <rangefinder name="scan" site="rf" cutoff="10"/>
+
   </sensor>
 </mujoco>
 
