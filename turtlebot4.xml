@@ -42,11 +42,11 @@
         <!-- WHEELS -->
         <body name="wheel_l" pos="0.11755 0.002 -0.0032">
             <geom type="mesh" mesh="wheel"/>
-            <joint name="left" damping=".03" actuatorfrcrange="-.2 .2" pos="0 0 0" axis="1 0 0"/>
+            <joint name="left" damping=".03" actuatorfrcrange="-.4 .4" pos="0 0 0" axis="1 0 0"/>
         </body>
         <body name="wheel_r" pos="-0.117 0.002 -0.0032">
             <geom type="mesh" mesh="wheel"/>
-            <joint name="right" damping=".03" actuatorfrcrange="-.2 .2" pos="0 0 0" axis="1 0 0"/>
+            <joint name="right" damping=".03" actuatorfrcrange="-.4 .4" pos="0 0 0" axis="1 0 0"/>
         </body>
         <body name="wheel_f" pos="0 -0.125 -0.026">
             <geom type="sphere" size="0.013 0.013"/>
@@ -66,18 +66,18 @@
 
   <tendon>
     <fixed name="forward">
-      <joint joint="left" coef=".2"/>
-      <joint joint="right" coef=".2"/>
+      <joint joint="left" coef=".83"/>
+      <joint joint="right" coef=".83"/>
     </fixed>
     <fixed name="turn">
-      <joint joint="left" coef="-.2"/>
-      <joint joint="right" coef=".2"/>
+      <joint joint="left" coef="-.1"/>
+      <joint joint="right" coef=".1"/>
     </fixed>
   </tendon>
 
   <actuator>
-    <motor name="forward" tendon="forward" ctrlrange="-1 1"/>
-    <motor name="turn" tendon="turn" ctrlrange="-1 1"/>
+    <motor name="forward" tendon="forward" ctrlrange="-0.5 0.5"/>
+    <motor name="turn" tendon="turn" ctrlrange="-2 2"/>
     <!-- Velocity servo for the lidar yaw joint -->
     <!-- Set control to 15.707963 (rad/s) for a 2.5 Hz spin -->
     <motor name="lidar_spin" joint="lidar_yaw" ctrllimited="true" ctrlrange="0.0 0.05"/>
