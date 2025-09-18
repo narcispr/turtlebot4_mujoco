@@ -213,6 +213,7 @@ class TB4RosNode(Node):
         # velocities
         lv = np.asarray(sensors['base_linvel']).reshape(3)
         av = np.asarray(sensors['imu_ang']).reshape(3)
+        # TODO: transform to odom frame! Currently linear velocity is in world frame???
         odom.twist.twist.linear.x = float(lv[0])
         odom.twist.twist.linear.y = float(lv[1])    
         odom.twist.twist.linear.z = float(lv[2])

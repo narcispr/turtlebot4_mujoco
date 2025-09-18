@@ -17,10 +17,9 @@
     </asset>
 
   <worldbody>
-    <body name="base" pos="0 0 0.0392">
-        <freejoint name="floating_base_joint"/>
+      <body name="base" pos="0 0 0.0392" quat="0.70710678 0 0 0.70710678">    <freejoint name="floating_base_joint"/>
         <geom type="mesh" mesh="body_visual_processed" material="gray" mass="0.269"/>
-        <site name="imu" pos="0.051 -0.035 0.0293"/>
+        <site name="imu" pos="0.051 -0.035 0.0293" quat="0.70710678 0 0 -0.70710678"/>
         <body name="top" pos="-0.128 0.138 0.055" axisangle="0 0 1 4.71239">
             <geom type="mesh" mesh="top_reduced" material="gray" mass="0.0"/>
         </body>
