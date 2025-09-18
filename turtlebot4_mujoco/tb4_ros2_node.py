@@ -108,7 +108,7 @@ class TB4RosNode(Node):
         msg = Imu()
         msg.header = Header()
         msg.header.stamp = self.get_clock().now().to_msg()
-        msg.header.frame_id = 'imu'  # or 'imu_link'
+        msg.header.frame_id = 'imu_link'
 
         # orientation
         x, y, z, w = _xyzw_from_mjcf_quat(sensors['imu_quat'])
@@ -156,7 +156,7 @@ class TB4RosNode(Node):
         scan = LaserScan()
         scan.header = Header()
         scan.header.stamp = self.get_clock().now().to_msg()
-        scan.header.frame_id = 'lidar'  # matches your MJCF body name
+        scan.header.frame_id = 'rplidar_link'  # matches your MJCF body name
 
         # Time parameters (you collect 500/10 = 50 rays over 0.1 s)
         scan.scan_time = 1.0 / float(self.sim.control_hz)
