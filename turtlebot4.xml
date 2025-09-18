@@ -102,6 +102,7 @@
     <jointvel name="lidar_yaw_vel" joint="lidar_yaw"/>
     <!-- Single 2D lidar rangefinder (returns distance along site -Z) -->
     <rangefinder name="scan" site="rf" cutoff="10"/>
+    <velocimeter name="base_linvel" site="imu"/>
 
   </sensor>
 </mujoco>

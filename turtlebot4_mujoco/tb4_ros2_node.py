@@ -2,16 +2,20 @@
 import time
 from typing import Dict, Any, List, Tuple
 import numpy as np
+import os
+from ament_index_python.packages import get_package_share_directory
 
 import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import Imu, JointState, LaserScan
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+
 from std_msgs.msg import Header
 
 # your sim class
-from turtlebot4_sim import Turtlebot4Sim, HAS_VIEWER  
+from .turtlebot4_sim import Turtlebot4Sim, HAS_VIEWER  
 try:
     from mujoco import viewer
 except Exception:
@@ -67,6 +71,7 @@ class TB4RosNode(Node):
         self.pub_imu = self.create_publisher(Imu, '/imu', 10)
         self.pub_js = self.create_publisher(JointState, '/joint_states', 10)
         self.pub_scan = self.create_publisher(LaserScan, '/scan', 10)
+        self.pub_odom = self.create_publisher(Odometry, '/odom', 10)
 
         # Subscriber
         self.last_cmd = Twist()
@@ -188,6 +193,35 @@ class TB4RosNode(Node):
         scan.intensities = []  # not provided
         return scan
 
+    def build_odom_msg(self, sensors: Dict[str, Any]) -> Any:
+        odom = Odometry()
+        odom.header = Header()
+        odom.header.stamp = self.get_clock().now().to_msg()
+        odom.header.frame_id = 'odom'
+        odom.child_frame_id = 'base_link'
+        # position
+        pos = np.asarray(sensors['base_pos']).reshape(3)
+        odom.pose.pose.position.x = float(pos[0])
+        odom.pose.pose.position.y = float(pos[1])
+        odom.pose.pose.position.z = float(pos[2])
+        # orientation
+        x, y, z, w = _xyzw_from_mjcf_quat(sensors['imu_quat'])
+        odom.pose.pose.orientation.x = x
+        odom.pose.pose.orientation.y = y
+        odom.pose.pose.orientation.z = z
+        odom.pose.pose.orientation.w = w
+        # velocities
+        lv = np.asarray(sensors['base_linvel']).reshape(3)
+        av = np.asarray(sensors['imu_ang']).reshape(3)
+        odom.twist.twist.linear.x = float(lv[0])
+        odom.twist.twist.linear.y = float(lv[1])    
+        odom.twist.twist.linear.z = float(lv[2])
+        odom.twist.twist.angular.x = float(av[0])
+        odom.twist.twist.angular.y = float(av[1])
+        odom.twist.twist.angular.z = float(av[2])
+    
+        return odom
+    
     def apply_cmd(self):
         # Map /cmd_vel to sim controls; clamp to ctrlrange
         fwd = float(self.last_cmd.linear.x)
@@ -197,10 +231,27 @@ class TB4RosNode(Node):
         self.sim.set_control(forward=fwd, turn=turn)
 
 
+def publish_all(sim: Turtlebot4Sim, node: TB4RosNode):
+    imu_msg = node.build_imu_msg(sim.sensors)
+    node.pub_imu.publish(imu_msg)
+
+    js_msg = node.build_joint_state_msg(sim.sensors)
+    node.pub_js.publish(js_msg)
+
+    odom_msg = node.build_odom_msg(sim.sensors)
+    node.pub_odom.publish(odom_msg)
+
+    scan_msg = node.build_scan_msg(sim.last_scan)
+    node.pub_scan.publish(scan_msg)
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--xml', default='scene.xml', help='Path to MJCF scene.')
+
+    package_share_dir = get_package_share_directory('turtlebot4_mujoco')
+    default_xml_path = os.path.join(package_share_dir, 'scene.xml')
+
+    parser.add_argument('--xml', default=default_xml_path, help='Path to MJCF scene.')
     parser.add_argument('--viewer', action='store_true', help='Open MuJoCo viewer.')
     parser.add_argument('--sim_hz', type=int, default=500)
     parser.add_argument('--control_hz', type=int, default=20)
@@ -217,52 +268,21 @@ def main():
     node.get_logger().info(f"Sensors: {sim.sensor_names()}")
     node.get_logger().info(f"Actuators: {sim.actuator_names()}")
 
-    # Main loop: manual (as you sketched)
-    steps = 50  # e.g., run 5s at 10 Hz
-
     try:
         if sim._use_viewer and HAS_VIEWER and viewer is not None:
             with viewer.launch_passive(sim.model, sim.data) as v:
                 sim._viewer = v
-                while rclpy.ok():
-                    # Apply latest /cmd_vel
+                while True:
                     node.apply_cmd()
-
-                    # Step sim for one control tick (collects last_scan & sensors)
                     sim.iterate(realtime=True)
-
-                    # Publish IMU
-                    imu_msg = node.build_imu_msg(sim.sensors)
-                    node.pub_imu.publish(imu_msg)
-
-                    # Publish JointState
-                    js_msg = node.build_joint_state_msg(sim.sensors)
-                    node.pub_js.publish(js_msg)
-
-                    # Publish LaserScan (from all samples in this tick)
-                    scan_msg = node.build_scan_msg(sim.last_scan)
-                    node.pub_scan.publish(scan_msg)
-
-                    # Service subscriptions once
+                    publish_all(sim, node)
                     rclpy.spin_once(node, timeout_sec=0.0)
-                sim._viewer = None
         else:
-            for _ in range(steps):
+            while True:
                 node.apply_cmd()
                 sim.iterate(realtime=False)
-
-                imu_msg = node.build_imu_msg(sim.sensors)
-                node.pub_imu.publish(imu_msg)
-
-                js_msg = node.build_joint_state_msg(sim.sensors)
-                node.pub_js.publish(js_msg)
-
-                scan_msg = node.build_scan_msg(sim.last_scan)
-                node.pub_scan.publish(scan_msg)
-
-                rclpy.spin_once(node, timeout_sec=0.0)
-                # simple pacing to ~control_hz wall-clock
-                time.sleep(1.0 / float(sim.control_hz))
+                publish_all(sim, node)
+                rclpy.spin_once(node, timeout_sec=0.0)                
 
     except KeyboardInterrupt:
         pass

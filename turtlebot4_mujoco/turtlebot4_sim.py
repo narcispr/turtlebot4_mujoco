@@ -51,7 +51,7 @@ class Turtlebot4Sim:
             self.model = mujoco.MjModel.from_xml_path(xml_path_or_str)
 
         # Sensors/Actuators to be presnet:
-        self.tb4_sensors = ['imu_quat', 'imu_ang', 'imu_acc', 'left_pos', 'left_vel', 'right_pos', 'right_vel', 'lidar_yaw_pos', 'lidar_yaw_vel', 'scan']
+        self.tb4_sensors = ['imu_quat', 'imu_ang', 'imu_acc', 'left_pos', 'left_vel', 'right_pos', 'right_vel', 'base_linvel', 'lidar_yaw_pos', 'lidar_yaw_vel', 'scan']
         self.tb4_actuators = ['forward', 'turn', 'lidar_spin']
         
         # Override timestep to hit desired sim rate (500 Hz => 0.002 s)
@@ -84,6 +84,12 @@ class Turtlebot4Sim:
                 print(f"[warn] Expected actuator '{a}' not found in model.")
                 exit(1)
         
+        # Get id for body named "base"
+        self._base_body_id = self.model.body("base").id
+        if self._base_body_id is None:
+            print("[warn] Body 'base' not found in model.")
+            exit(1)
+        
         # Initialise lidar rotation
         self.data.ctrl[self._act_id["lidar_spin"]] = float(0.05)  # ~2.5 Hz spin
 
@@ -115,11 +121,22 @@ class Turtlebot4Sim:
         Return a dict: sensor_name -> scalar (float) or np.ndarray for vector sensors.
         """
         out: Dict[str, Any] = {}
-        for s in self.tb4_sensors[0:7]:  # first 7 are vectors
-            info = self._sensors[s]
-            vals = self.data.sensordata[info.adr: info.adr + info.dim]
-            out[s] = np.array(vals, copy=True)
+        # List of sensors to read directly from sensordata
+        sensors_to_read = [
+            'imu_quat', 'imu_ang', 'imu_acc',
+            'left_pos', 'left_vel', 'right_pos', 'right_vel',
+            'base_linvel' # Linear velocity sensor
+        ]
+        for s in sensors_to_read:
+            if s in self._sensors: # Check if sensor exists in the model
+                info = self._sensors[s]
+                vals = self.data.sensordata[info.adr: info.adr + info.dim]
+                out[s] = np.array(vals, copy=True)
 
+        # get position for base body
+        pos = self.data.body(self._base_body_id).xpos
+        out['base_pos'] = np.array(pos, copy=True)
+        
         return out
 
     def read_scan(self) -> Tuple[float, float]:
