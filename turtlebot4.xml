@@ -20,25 +20,25 @@
       <body name="base" pos="0 0 0.0392" quat="0.70710678 0 0 0.70710678">    <freejoint name="floating_base_joint"/>
         <geom type="mesh" mesh="body_visual_processed" material="gray" mass="0.269"/>
         <site name="imu" pos="0.051 -0.035 0.0293" quat="0.70710678 0 0 -0.70710678"/>
-        <body name="top" pos="-0.128 0.138 0.055" axisangle="0 0 1 4.71239">
+        <!--body name="top" pos="-0.128 0.138 0.055" axisangle="0 0 1 4.71239">
             <geom type="mesh" mesh="top_reduced" material="gray" mass="0.0"/>
-        </body>
+        </body-->
         <body name="bumper" pos="0 0 0" axisangle="0 0 1 4.71239">
             <geom type="mesh" mesh="bumper_visual" material="black" mass="0.1"/>
         </body>
         <!-- WEIGHT BLOCKS -->
-        <body name="front_left_bottom_weight_block" pos="0.0876 -0.06 0.0587">
+        <!--body name="front_left_bottom_weight_block" pos="0.0876 -0.06 0.0587">
             <geom type="mesh" mesh="weight_block" material="black" mass="0.061"/>
         </body>
         <body name="front_left_top_weight_block" pos="0.0876 -0.06 0.0677">
             <geom type="mesh" mesh="weight_block" material="black" mass="0.061"/>
-        </body>
+        </body->
         <body name="front_right_bottom_weight_block" pos="-0.0876 -0.06 0.0587">
             <geom type="mesh" mesh="weight_block" material="black" mass="0.061"/>
         </body>
         <body name="front_right_top_weight_block" pos="-0.0876 -0.06 0.0677">
             <geom type="mesh" mesh="weight_block" material="black" mass="0.061"/>
-        </body>
+        </body-->
         <!-- WHEELS -->
         <body name="wheel_l" pos="0.11755 0.002 -0.0032">
             <geom type="mesh" mesh="wheel"/>
@@ -53,14 +53,12 @@
             <joint type="ball"/>
         </body>
         
-        <!-- Spinning 2D lidar (single rangefinder on a yaw hinge) -->
-      <body name="lidar" pos="0.0 0.04 0.17">
+      <!-- Spinning 2D lidar (single rangefinder on a yaw hinge) -->
+      <body name="lidar" pos="0.0 -0.00 0.08">
         <joint name="lidar_yaw" type="hinge" axis="0 0 1" damping="0.0032" armature="0.001" frictionloss="0" limited="false"/>
-        <geom name="lidar_head_geom" type="box" size="0.01 0.01 0.01" rgba="0.2 0.8 1 0.3" mass="0.01"/>
+        <geom name="lidar_head_geom" type="cylinder" size="0.035 0.015" rgba="0.1 0.1 0.1 1.0" mass="0.01"/>
         <site name="rf" pos="0.025 0 0" axisangle="0 1 0 1.570796" size="0.003" rgba="0 1 0 0.5"/>
       </body>
-
-
     </body>
   </worldbody>
 
