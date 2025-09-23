@@ -28,16 +28,25 @@ It is highly recommended to use a Python **virtual environment** to manage depen
 2.  **Create and Activate Virtual Environment:**
     Navigate to a convenient location, create a virtual environment, and install the required Python packages.
     ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install mujoco numpy
+        # create a venv that can see /opt/ros/* python packages
+        python3 -m venv --system-site-packages ~/ros2_venv
+        source ~/ros2_venv/bin/activate
+
+        # install python deps you need
+        pip install -U pip
+        pip install mujoco glfw numpy 
     ```
 
 3.  **Build the Workspace:**
     Navigate to the root of your ROS 2 workspace and build the package using `colcon`.
     ```bash
-    cd /path/to/your/ros2_ws
-    colcon build --symlink-install
+        # Fresh shell
+        source /opt/ros/jazzy/setup.bash
+        source ~/ros2_venv/bin/activate            # venv ON
+        cd ~/ros2_ws
+        rm -rf build/ install/ log/                # important: regenerate wrappers
+        python3 -m colcon build --symlink-install  # <- uses venv’s python
+        . install/setup.bash
     ```
 
 ## Running the Simulation
@@ -48,7 +57,13 @@ Due to the way ROS 2 interacts with Python environments, you must follow a speci
 
 2.  **Source your ROS 2 workspace:**
     ```bash
-    source /path/to/your/ros2_ws/install/setup.bash
+        source /opt/ros/jazzy/setup.bash
+        source ~/ros2_venv/bin/activate        
+        cd ~/ros2_ws
+        . install/setup.bash
+        
+        # Run
+        ros2 run turtlebot4_mujoco tb4_ros2_node
     ```
 
 3.  **Add your virtual environment's packages to the `PYTHONPATH`:**

@@ -4,6 +4,9 @@ from typing import Dict, Any, List, Tuple
 import numpy as np
 import os
 from ament_index_python.packages import get_package_share_directory
+import argparse
+from tf2_ros import TransformBroadcaster
+from geometry_msgs.msg import TransformStamped
 
 import rclpy
 from rclpy.node import Node
@@ -77,6 +80,9 @@ class TB4RosNode(Node):
         self.last_cmd = Twist()
         self.create_subscription(Twist, '/cmd_vel', self._cmd_vel_cb, 10)
 
+        # TF broadcaster
+        self.tf_broadcaster = TransformBroadcaster(self)
+
         # Cache ctrl ranges for clamping (if available)
         self.forward_min, self.forward_max = -1.0, 1.0
         self.turn_min, self.turn_max = -1.0, 1.0
@@ -97,7 +103,7 @@ class TB4RosNode(Node):
         self.range_max = 10.0
 
         # Names for joint state (match MJCF)
-        self.js_names = ['left', 'right']
+        self.js_names = ['left_wheel_joint', 'right_wheel_joint']
 
     def _cmd_vel_cb(self, msg: Twist):
         self.last_cmd = msg
@@ -245,8 +251,18 @@ def publish_all(sim: Turtlebot4Sim, node: TB4RosNode):
     scan_msg = node.build_scan_msg(sim.last_scan)
     node.pub_scan.publish(scan_msg)
 
+    # Create broadcaster if not already present
+    t = TransformStamped()
+    t.header.stamp = odom_msg.header.stamp
+    t.header.frame_id = odom_msg.header.frame_id
+    t.child_frame_id = odom_msg.child_frame_id
+    t.transform.translation.x = odom_msg.pose.pose.position.x
+    t.transform.translation.y = odom_msg.pose.pose.position.y
+    t.transform.translation.z = odom_msg.pose.pose.position.z
+    t.transform.rotation = odom_msg.pose.pose.orientation
+    node.tf_broadcaster.sendTransform(t)
+    
 def main():
-    import argparse
     parser = argparse.ArgumentParser()
 
     package_share_dir = get_package_share_directory('turtlebot4_mujoco')

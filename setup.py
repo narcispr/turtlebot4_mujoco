@@ -16,6 +16,8 @@ setup(
         (os.path.join('share', package_name), glob('*.xml')),
         (os.path.join("share", package_name, "launch"),
             glob("launch/*.launch.py")),
+        # install URDF/Xacro files
+        (os.path.join('share', package_name, 'urdf'), glob('urdf/*.urdf') + glob('urdf/*.urdf.xacro')),
     ],
     install_requires=['setuptools', 'numpy', 'mujoco'],
     zip_safe=True,
