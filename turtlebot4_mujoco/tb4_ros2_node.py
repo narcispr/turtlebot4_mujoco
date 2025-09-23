@@ -269,7 +269,8 @@ def main():
     default_xml_path = os.path.join(package_share_dir, 'scene.xml')
 
     parser.add_argument('--xml', default=default_xml_path, help='Path to MJCF scene.')
-    parser.add_argument('--viewer', action='store_true', help='Open MuJoCo viewer.')
+    parser.add_argument('--headless', action='store_true', help='Run MuJoCo without GUI.')
+    parser.add_argument('--no_realtime', action='store_true', help='Run MuJoCo as fast as possible.')
     parser.add_argument('--sim_hz', type=int, default=500)
     parser.add_argument('--control_hz', type=int, default=20)
     args = parser.parse_args()
@@ -278,7 +279,7 @@ def main():
     rclpy.init()
 
     # Build sim
-    sim = Turtlebot4Sim(args.xml, from_string=False, open_viewer=args.viewer,
+    sim = Turtlebot4Sim(args.xml, from_string=False, open_viewer=(not args.headless),
                         sim_hz=args.sim_hz, control_hz=args.control_hz)
     node = TB4RosNode(sim)
 
@@ -291,13 +292,13 @@ def main():
                 sim._viewer = v
                 while True:
                     node.apply_cmd()
-                    sim.iterate(realtime=True)
+                    sim.iterate(realtime=(not args.no_realtime))
                     publish_all(sim, node)
                     rclpy.spin_once(node, timeout_sec=0.0)
         else:
             while True:
                 node.apply_cmd()
-                sim.iterate(realtime=False)
+                sim.iterate(realtime=(not args.no_realtime))
                 publish_all(sim, node)
                 rclpy.spin_once(node, timeout_sec=0.0)                
 

@@ -2,13 +2,13 @@
 <robot name="turtlebot4_minimal" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <xacro:property name="base_radius" value="0.17"/>
-  <xacro:property name="base_height" value="0.08"/>
+  <xacro:property name="base_height" value="0.06"/>
   <xacro:property name="wheel_radius" value="0.036"/>   <!-- 72 mm diameter -->
-  <xacro:property name="wheel_width"  value="0.02"/>
+  <xacro:property name="wheel_width"  value="0.03"/>
   <xacro:property name="track"        value="0.234"/>   <!-- wheel separation (center-to-center) -->
   <xacro:property name="lidar_x"      value="0.0"/>
-  <xacro:property name="lidar_y"      value="0.04"/>
-  <xacro:property name="lidar_z"      value="0.17"/>
+  <xacro:property name="lidar_y"      value="0.0"/>
+  <xacro:property name="lidar_z"      value="0.05"/>
   <xacro:property name="imu_x"        value="0.051"/>
   <xacro:property name="imu_y"        value="-0.035"/>
   <xacro:property name="imu_z"        value="0.0293"/>
@@ -17,7 +17,7 @@
   <!-- Base body -->
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+      <origin xyz="0 0 ${base_height/2 + 0.015}" rpy="0 0 0"/>
       <geometry>
         <cylinder radius="${base_radius}" length="${base_height}"/>
       </geometry>
@@ -38,7 +38,7 @@
   <link name="left_wheel_link">
     <visual>
       <!-- URDF cylinders are along Z; rotate +90° about X to align axis with Y -->
-      <origin xyz="0 ${track/2} ${wheel_radius}" rpy="1.570796 0 0"/>
+      <origin xyz="0 0 0" rpy="1.570796 0 0"/>
       <geometry>
         <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
       </geometry>
@@ -47,7 +47,7 @@
       </material>
     </visual>
     <collision>
-      <origin xyz="0 ${track/2} ${wheel_radius}" rpy="1.570796 0 0"/>
+      <origin xyz="0 0 0" rpy="1.570796 0 0"/>
       <geometry>
         <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
       </geometry>
@@ -62,7 +62,7 @@
   <!-- Right wheel -->
   <link name="right_wheel_link">
     <visual>
-      <origin xyz="0 ${-track/2} ${wheel_radius}" rpy="1.570796 0 0"/>
+      <origin xyz="0 0 0" rpy="1.570796 0 0"/>
       <geometry>
         <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
       </geometry>
@@ -71,7 +71,7 @@
       </material>
     </visual>
     <collision>
-      <origin xyz="0 ${-track/2} ${wheel_radius}" rpy="1.570796 0 0"/>
+      <origin xyz="0 0 0" rpy="1.570796 0 0"/>
       <geometry>
         <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
       </geometry>
@@ -87,10 +87,10 @@
     <visual>
       <origin xyz="${lidar_x} ${lidar_y} ${lidar_z}" rpy="0 0 0"/>
       <geometry>
-        <cylinder radius="0.03" length="0.04"/>
+        <cylinder radius="0.035" length="0.03"/>
       </geometry>
       <material name="blue">
-        <color rgba="0.2 0.6 1.0 1.0"/>
+        <color rgba="0.1 0.1 0.1 1.0"/>
       </material>
     </visual>
     <collision>
