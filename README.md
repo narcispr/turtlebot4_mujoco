@@ -2,6 +2,7 @@
 
 This package provides a simple, lightweight simulation of the TurtleBot4 mobile robot using [MuJoCo](https://mujoco.org/) and [ROS 2](https://docs.ros.org/).
 
+![TurtleBot4 in MuJoCo Viewer](./images/rviz_mujoco.png)
 ## Overview
 
 The `tb4_ros2_node` node initializes a MuJoCo simulation of a TurtleBot4 Lite and exposes basic sensor and control topics to the ROS 2 graph. This allows for testing and development of ROS 2 applications without needing a physical robot or a more heavyweight simulator.
