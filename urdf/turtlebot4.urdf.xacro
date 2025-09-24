@@ -134,7 +134,7 @@
   <joint name="rplidar_mount" type="fixed">
     <parent link="base_link"/>
     <child  link="rplidar_link"/>
-    <origin xyz="${lidar_x} ${lidar_y} ${lidar_z}" rpy="0 0 0"/>
+    <origin xyz="${lidar_x} ${lidar_y} ${lidar_z}" rpy="0 0 1.57"/>
   </joint>
 
   <!-- IMU fixed frame at MJCF site position -->
